@@ -1,0 +1,16 @@
+{
+  "name": "com.envdev.easeroutines",
+  "version": "1.0.0",
+  "displayName": "Ease Routines",
+  "description": "Provides number of coroutines that can works as an easy way to Tween objects using provided ease functions.",
+  "keywords": [
+    "Tween",
+    "Ease",
+    "Routines"
+  ],
+  "author": {
+    "name": "Evgeny Vasilyev",
+    "email": "zeejfps@gmail.com",
+    "url": "https://www.evasilyev.com"
+  }
+}
