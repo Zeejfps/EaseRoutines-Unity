@@ -29,7 +29,7 @@ namespace EnvDev
 
         public void Run(IEnumerator tweenRoutine)
         {
-            Stop();
+            Interrupt();
             m_Coroutine = m_Target.StartCoroutine(RunRoutine(tweenRoutine));
         }
 
@@ -41,7 +41,7 @@ namespace EnvDev
                 return;
             }
 
-            Stop();
+            Interrupt();
 
             while (tweenRoutines.Length > m_Children.Count)
                 m_Children.Add(new TweenRunner(m_Target));
@@ -55,7 +55,7 @@ namespace EnvDev
         /// <summary>
         /// Stops all tweens
         /// </summary>
-        public void Stop()
+        public void Interrupt()
         {
             if (!IsRunning)
                 return;
@@ -64,7 +64,7 @@ namespace EnvDev
                 m_Target.StopCoroutine(m_Coroutine);
 
             foreach (var child in m_Children)
-                child.Stop();
+                child.Interrupt();
 
             IsRunning = false;
             Stopped?.Invoke();
