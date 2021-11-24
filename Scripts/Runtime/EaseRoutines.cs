@@ -13,32 +13,32 @@ namespace EnvDev
 
         public static IEnumerator CubicInOut(float duration, Action<float> lerpFunc)
         {
-            return TweenRoutine(duration, lerpFunc, EasingFunctions.EaseInOutCubic);
+            return TweenRoutine(duration, lerpFunc, EaseFunctions.EaseInOutCubic);
         }
 
         public static IEnumerator CubicIn(float duration, Action<float> lerpFunc)
         {
-            return TweenRoutine(duration, lerpFunc, EasingFunctions.EaseInCubic);
+            return TweenRoutine(duration, lerpFunc, EaseFunctions.EaseInCubic);
         }
 
         public static IEnumerator CubicOut(float duration, Action<float> lerpFunc)
         {
-            return TweenRoutine(duration, lerpFunc, EasingFunctions.EaseOutCubic);
+            return TweenRoutine(duration, lerpFunc, EaseFunctions.EaseOutCubic);
         }
 
         public static IEnumerator BounceOut(float duration, Action<float> lerpFunc)
         {
-            return TweenRoutine(duration, lerpFunc, EasingFunctions.EaseOutBounce);
+            return TweenRoutine(duration, lerpFunc, EaseFunctions.EaseOutBounce);
         }
 
         public static IEnumerator BackOut(float duration, Action<float> lerpFunc)
         {
-            return TweenRoutine(duration, lerpFunc, EasingFunctions.EaseOutBack);
+            return TweenRoutine(duration, lerpFunc, EaseFunctions.EaseOutBack);
         }
 
         public static IEnumerator ElasticOut(float duration, Action<float> lerpFunc)
         {
-            return TweenRoutine(duration, lerpFunc, EasingFunctions.EaseOutElastic);
+            return TweenRoutine(duration, lerpFunc, EaseFunctions.EaseOutElastic);
         }
 
         public static IEnumerator AnimCurve(float duration, Action<float> lerpFunc, AnimationCurve curve)

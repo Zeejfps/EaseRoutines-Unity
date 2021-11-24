@@ -6,7 +6,7 @@ namespace EnvDev
     /// <summary>
     /// Ease functions based of this cheat sheet: https://easings.net/
     /// </summary>
-    public static class EasingFunctions
+    public static class EaseFunctions
     {
         const double N1 = 7.5635;
         const double D1 = 2.75;
