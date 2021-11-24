@@ -22,37 +22,26 @@ namespace EnvDev
         readonly List<CoroutineRunner> m_Runners = new List<CoroutineRunner>();
 
         Coroutine m_Coroutine;
+        int m_ActiveCoroutineCount;
+        int m_RunningCoroutineIndex;
 
         public CoroutineRunner(MonoBehaviour target)
         {
             m_Target = target;
         }
 
-        public void Run(IEnumerator tweenRoutine)
-        {
-            Interrupt();
-            m_Coroutine = m_Target.StartCoroutine(WaitFor(tweenRoutine));
-        }
-
         public void Run(params IEnumerator[] coroutines)
         {
-            var coroutineCount = coroutines.Length;
-
-            if (coroutineCount == 1)
-            {
-                Run(coroutines[0]);
-                return;
-            }
-
-            Interrupt();
-
-            while (coroutineCount > m_Runners.Count)
+            while (m_ActiveCoroutineCount + coroutines.Length > m_Runners.Count)
                 m_Runners.Add(new CoroutineRunner(m_Target));
 
-            for (var i = 0; i < coroutineCount; i++)
-                m_Runners[i].Run(coroutines[i]);
+            for (var i = 0; i < coroutines.Length; i++)
+                m_Runners[m_ActiveCoroutineCount + i].RunSingle(coroutines[i]);
 
-            m_Coroutine = m_Target.StartCoroutine(WaitForAll(m_Runners, coroutineCount));
+            m_ActiveCoroutineCount += coroutines.Length;
+
+            if (!IsRunning)
+                RunAll();
         }
 
         /// <summary>
@@ -66,49 +55,80 @@ namespace EnvDev
             if (m_Coroutine != null)
                 m_Target.StopCoroutine(m_Coroutine);
 
-            foreach (var child in m_Runners)
-                child.Interrupt();
+            for (var i = m_RunningCoroutineIndex; i < m_ActiveCoroutineCount; i++)
+                m_Runners[i].Interrupt();
 
             IsRunning = false;
+            OnInterrupted();
+            OnStopped();
+        }
+
+        void RunAll()
+        {
+            m_Coroutine = m_Target.StartCoroutine(WaitForAll());
+        }
+
+        void RunSingle(IEnumerator coroutine)
+        {
+            m_Coroutine = m_Target.StartCoroutine(WaitFor(coroutine));
+        }
+
+        void OnStarted()
+        {
+            Started?.Invoke();
+        }
+
+        void OnInterrupted()
+        {
             Interrupted?.Invoke();
+        }
+        
+        void OnCompleted()
+        {
+            Completed?.Invoke();
+        }
+        
+        void OnStopped()
+        {
+            m_ActiveCoroutineCount = 0;
+            m_RunningCoroutineIndex = 0;
             Stopped?.Invoke();
         }
 
         IEnumerator WaitFor(IEnumerator coroutine)
         {
             IsRunning = true;
-            Started?.Invoke();
-
+            OnStarted();
+            
             yield return coroutine;
 
             IsRunning = false;
-            Completed?.Invoke();
-            Stopped?.Invoke();
+            OnCompleted();
+            OnStopped();
         }
-
-        IEnumerator WaitForAll(List<CoroutineRunner> runners, int coroutineCount)
+        
+        IEnumerator WaitForAll()
         {
             IsRunning = true;
-            Started?.Invoke();
+            OnStarted();
 
-            var runningCoroutineIndex = 0;
             while (true)
             {
-                if (runners[runningCoroutineIndex].IsRunning)
+                if (m_Runners[m_RunningCoroutineIndex].IsRunning)
                 {
                     yield return null;
                 }
                 else
                 {
-                    runningCoroutineIndex++;
-                    if (runningCoroutineIndex >= coroutineCount)
+                    m_RunningCoroutineIndex++;
+                    if (m_RunningCoroutineIndex >= m_ActiveCoroutineCount)
                         break;
                 }
             }
 
             IsRunning = false;
-            Completed?.Invoke();
-            Stopped?.Invoke();
+            OnCompleted();
+            OnStopped();
         }
     }
 
