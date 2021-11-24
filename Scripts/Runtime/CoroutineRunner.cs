@@ -19,10 +19,10 @@ namespace EnvDev
         public bool IsRunning { get; private set; }
 
         readonly MonoBehaviour m_Target;
-        readonly List<CoroutineRunner> m_Runners = new List<CoroutineRunner>();
+        readonly List<CoroutineRunner> m_RunnersPool = new List<CoroutineRunner>();
 
         Coroutine m_Coroutine;
-        int m_ActiveCoroutineCount;
+        int m_ActiveRunnerCount;
         int m_RunningCoroutineIndex;
 
         public CoroutineRunner(MonoBehaviour target)
@@ -32,16 +32,18 @@ namespace EnvDev
 
         public void Run(params IEnumerator[] coroutines)
         {
-            while (m_ActiveCoroutineCount + coroutines.Length > m_Runners.Count)
-                m_Runners.Add(new CoroutineRunner(m_Target));
+            var coroutineCount = coroutines.Length;
+            var newActiveRunnerCount = m_ActiveRunnerCount + coroutineCount;
+            
+            while (newActiveRunnerCount > m_RunnersPool.Count)
+                m_RunnersPool.Add(new CoroutineRunner(m_Target));
 
-            for (var i = 0; i < coroutines.Length; i++)
-                m_Runners[m_ActiveCoroutineCount + i].RunSingle(coroutines[i]);
+            for (var i = 0; i < coroutineCount; i++)
+                m_RunnersPool[m_ActiveRunnerCount + i].RunSingle(coroutines[i]);
 
-            m_ActiveCoroutineCount += coroutines.Length;
+            m_ActiveRunnerCount = newActiveRunnerCount;
 
-            if (!IsRunning)
-                RunAll();
+            if (!IsRunning) StartRunning();
         }
 
         /// <summary>
@@ -55,15 +57,15 @@ namespace EnvDev
             if (m_Coroutine != null)
                 m_Target.StopCoroutine(m_Coroutine);
 
-            for (var i = m_RunningCoroutineIndex; i < m_ActiveCoroutineCount; i++)
-                m_Runners[i].Interrupt();
+            for (var i = m_RunningCoroutineIndex; i < m_ActiveRunnerCount; i++)
+                m_RunnersPool[i].Interrupt();
 
             IsRunning = false;
             OnInterrupted();
             OnStopped();
         }
 
-        void RunAll()
+        void StartRunning()
         {
             m_Coroutine = m_Target.StartCoroutine(WaitForAll());
         }
@@ -90,7 +92,7 @@ namespace EnvDev
         
         void OnStopped()
         {
-            m_ActiveCoroutineCount = 0;
+            m_ActiveRunnerCount = 0;
             m_RunningCoroutineIndex = 0;
             Stopped?.Invoke();
         }
@@ -114,14 +116,14 @@ namespace EnvDev
 
             while (true)
             {
-                if (m_Runners[m_RunningCoroutineIndex].IsRunning)
+                if (m_RunnersPool[m_RunningCoroutineIndex].IsRunning)
                 {
                     yield return null;
                 }
                 else
                 {
                     m_RunningCoroutineIndex++;
-                    if (m_RunningCoroutineIndex >= m_ActiveCoroutineCount)
+                    if (m_RunningCoroutineIndex >= m_ActiveRunnerCount)
                         break;
                 }
             }
