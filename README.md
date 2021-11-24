@@ -5,7 +5,9 @@ A simple package that wraps the ease functions from https://easings.net/ into co
 ## Example
 
 ```c#
+using System.Collections;
 using EnvDev;
+using UnityEngine;
 
 public class EaseRoutinesExample : MonoBehaviour
 {         
@@ -24,23 +26,26 @@ public class EaseRoutinesExample : MonoBehaviour
 
         // Do anything you like once the tween is over
     }
+    
+    // This is not necessary but can be usefull if you plan on running multiple coroutines
+    CoroutineRunner m_CoroutineRunner;
 
-    Coroutine m_Tween;
-
-    void PlayTween(IEnumerator tween) 
+    void Awake()
     {
-        if (m_Tween != null)  
-        {
-            StopCoroutine(m_Tween);
-        }
-        m_Tween = StartCoroutine(tween);
+        m_CoroutineRunner = new CoroutineRunner(this);
+    }
+
+    void OnDisable()
+    {
+        // We want to interrupt anything that might be running when we are disabled to avoid getting errors
+        m_CoroutineRunner.Interrupt();
     }
 
     void Update() 
     {
         if (Input.GetKeyDown(KeyCode.Space))
         {
-            PlayTween(MoveTween());
+            m_CoroutineRunner.Run(MoveTween());
         }
     }
 }
