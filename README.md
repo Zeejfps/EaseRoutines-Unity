@@ -5,6 +5,8 @@ A simple package that wraps the ease functions from https://easings.net/ into co
 ## Example
 
 ```c#
+using EnvDev;
+
 public class EaseRoutinesExample : MonoBehaviour
 {         
     // This coroutine demonstrates how to use the EaseRoutines package
