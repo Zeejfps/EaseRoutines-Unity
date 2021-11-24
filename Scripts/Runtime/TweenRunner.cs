@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Net;
 using UnityEngine;
 
 namespace EnvDev
@@ -18,7 +19,7 @@ namespace EnvDev
         public bool IsRunning { get; private set; }
 
         readonly MonoBehaviour m_Target;
-        readonly List<TweenRunner> m_Children = new List<TweenRunner>();
+        readonly List<TweenRunner> m_Runners = new List<TweenRunner>();
 
         Coroutine m_Coroutine;
 
@@ -43,13 +44,15 @@ namespace EnvDev
 
             Interrupt();
 
-            while (tweenRoutines.Length > m_Children.Count)
-                m_Children.Add(new TweenRunner(m_Target));
+            var tweenCount = tweenRoutines.Length;
+            
+            while (tweenCount > m_Runners.Count)
+                m_Runners.Add(new TweenRunner(m_Target));
 
-            for (var i = 0; i < tweenRoutines.Length; i++)
-                m_Children[i].Run(tweenRoutines[i]);
+            for (var i = 0; i < tweenCount; i++)
+                m_Runners[i].Run(tweenRoutines[i]);
 
-            m_Coroutine = m_Target.StartCoroutine(WaitForAll(m_Children));
+            m_Coroutine = m_Target.StartCoroutine(WaitForAll(m_Runners, tweenCount));
         }
 
         /// <summary>
@@ -63,12 +66,12 @@ namespace EnvDev
             if (m_Coroutine != null)
                 m_Target.StopCoroutine(m_Coroutine);
 
-            foreach (var child in m_Children)
+            foreach (var child in m_Runners)
                 child.Interrupt();
 
             IsRunning = false;
-            Stopped?.Invoke();
             Interrupted?.Invoke();
+            Stopped?.Invoke();
         }
 
         IEnumerator RunRoutine(IEnumerator routine)
@@ -79,21 +82,33 @@ namespace EnvDev
             yield return routine;
 
             IsRunning = false;
-            Stopped?.Invoke();
             Completed?.Invoke();
+            Stopped?.Invoke();
         }
 
-        IEnumerator WaitForAll(List<TweenRunner> runners)
+        IEnumerator WaitForAll(List<TweenRunner> runners, int tweenCount)
         {
             IsRunning = true;
             Started?.Invoke();
 
-            while (runners.Exists(r => r.IsRunning))
-                yield return null;
+            var runningTweenIndex = 0;
+            while (true)
+            {
+                if (runners[runningTweenIndex].IsRunning)
+                {
+                    yield return null;
+                }
+                else
+                {
+                    runningTweenIndex++;
+                    if (runningTweenIndex >= tweenCount)
+                        break;
+                }
+            }
 
             IsRunning = false;
-            Stopped?.Invoke();
             Completed?.Invoke();
+            Stopped?.Invoke();
         }
     }
 
