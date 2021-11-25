@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using UnityEngine;
 using UnityEngine.Assertions;
 
@@ -125,11 +126,12 @@ namespace EnvDev
             IsRunning = false;
         }
         
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         IEnumerator WaitForAll()
         {
-            while (IsRunning)
+            while (true)
             {
-                if (m_RunnersPool[m_RunningCoroutineIndex].IsRunning)
+                if (m_RunnersPool[m_RunningCoroutineIndex].m_IsRunning)
                 {
                     yield return null;
                 }
@@ -137,9 +139,10 @@ namespace EnvDev
                 {
                     m_RunningCoroutineIndex++;
                     if (m_RunningCoroutineIndex >= m_ActiveRunnerCount)
-                        IsRunning = false;
+                        break;
                 }
             }
+            IsRunning = false;
         }
     }
 }

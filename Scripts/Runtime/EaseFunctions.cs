@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.CompilerServices;
 
 
 namespace EnvDev
@@ -16,16 +17,19 @@ namespace EnvDev
 
         #region Sine
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static double SineIn(double x)
         {
             return 1.0 - Math.Cos((x * Math.PI) / 2.0);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static double SineOut(double x)
         {
             return Math.Sin((x * Math.PI) / 2.0);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static double SineInOut(double x)
         {
             return -(Math.Cos(Math.PI * x) - 1.0) / 2.0;
@@ -35,16 +39,19 @@ namespace EnvDev
         
         #region Cubic
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static double CubicOut(double x)
         {
             return 1.0 - Math.Pow(1.0 - x, 3.0);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static double CubicIn(double x)
         {
             return x * x * x;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static double CubicInOut(double x)
         {
             return x < 0.5 ? 4.0 * x * x * x : 1.0 - Math.Pow(-2.0 * x + 2.0, 3.0) / 2.0;
@@ -54,16 +61,19 @@ namespace EnvDev
 
         #region Quad
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static double QuadIn(double x)
         {
             return x * x;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static double QuadOut(double x)
         {
             return 1.0 - (1.0 - x) * (1.0 - x);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static double QuadInOut(double x)
         {
             return x < 0.5 ? 2.0 * x * x : 1.0 - Math.Pow(-2.0 * x + 2.0, 2.0) / 2.0;
@@ -73,11 +83,13 @@ namespace EnvDev
 
         #region Bounce
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static double BounceIn(double x)
         {
             return 1.0 - BounceOut(1.0 - x);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static double BounceOut(double x)
         {
             if (x < 1 / D1)
@@ -98,6 +110,7 @@ namespace EnvDev
             return N1 * (x -= 2.625 / D1) * x + 0.984375;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static double BounceInOut(double x)
         {
             return x < 0.5
@@ -109,6 +122,7 @@ namespace EnvDev
 
         #region Back
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static double BackOut(double x)
         {
             return 1 + C3 * Math.Pow(x - 1, 3) + C1 * Math.Pow(x - 1, 2);
@@ -117,7 +131,8 @@ namespace EnvDev
         #endregion
 
         #region Elastic
-
+        
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static double ElasticIn(double x)
         {
             return x == 0
@@ -127,6 +142,7 @@ namespace EnvDev
                     : -Math.Pow(2, 10 * x - 10) * Math.Sin((x * 10 - 10.75) * C4);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static double ElasticOut(double x)
         {
             if (x == 0.0)
