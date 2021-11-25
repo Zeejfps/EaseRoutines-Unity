@@ -85,8 +85,12 @@ namespace EnvDev
         public void Interrupt()
         {
             Assert.IsTrue(IsRunning, "IsRunning must be true!");
-            
-            m_Target.StopCoroutine(m_Coroutine);
+
+            if (m_Coroutine != null)
+            {
+                m_Target.StopCoroutine(m_Coroutine);
+                m_Coroutine = null;
+            }
 
             for (var i = m_ActiveRunnerIndex; i < m_ActiveRunnerCount; i++)
                 m_RunnersPool[i].Interrupt();
