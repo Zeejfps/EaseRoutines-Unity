@@ -76,7 +76,11 @@ namespace EnvDev
             if (!IsRunning)
             {
                 IsRunning = true;
-                m_RunnersPool[m_ActiveRunnerIndex].Then(OnActiveRunnerCompleted);
+                var activeRunner = m_RunnersPool[m_ActiveRunnerIndex];
+                if (activeRunner.IsRunning)
+                    activeRunner.Then(OnActiveRunnerCompleted);
+                else
+                    OnActiveRunnerCompleted();
             }
 
             return this;
@@ -122,6 +126,7 @@ namespace EnvDev
         {
             IsRunning = true;
             m_ThenAction = null;
+            m_IsInterrupted = false;
             m_Coroutine = m_Target.StartCoroutine(WaitForCompletion(coroutine));
         }
 
