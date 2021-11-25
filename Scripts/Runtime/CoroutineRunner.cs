@@ -1,7 +1,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
 using UnityEngine;
 using UnityEngine.Assertions;
 
@@ -30,7 +29,7 @@ namespace EnvDev
         Action m_ThenAction;
         Coroutine m_Coroutine;
         int m_ActiveRunnerCount;
-        int m_RunningCoroutineIndex;
+        int m_ActiveRunnerIndex;
         bool m_IsInterrupted;
 
         public CoroutineRunner(MonoBehaviour target)
@@ -47,6 +46,11 @@ namespace EnvDev
             m_ThenAction = action;
         }
 
+        /// <summary>
+        /// Adds the coroutines to be executed and begins running
+        /// </summary>
+        /// <param name="coroutines"></param>
+        /// <returns></returns>
         public CoroutineRunner Run(params IEnumerator[] coroutines)
         {
             m_IsInterrupted = false;
@@ -61,13 +65,16 @@ namespace EnvDev
             for (var i = 0; i < coroutineCount; i++)
             {
                 var runner = m_RunnersPool[m_ActiveRunnerCount + i];
-                runner.StartWaitingFor(coroutines[i]);
+                runner.StartCoroutine(coroutines[i]);
             }
 
             m_ActiveRunnerCount = newActiveRunnerCount;
 
             if (!IsRunning)
-                StartWaitingForAll();
+            {
+                IsRunning = true;
+                m_RunnersPool[m_ActiveRunnerIndex].Then(OnActiveRunnerCompleted);
+            }
 
             return this;
         }
@@ -77,33 +84,46 @@ namespace EnvDev
         /// </summary>
         public void Interrupt()
         {
-            Assert.IsTrue(IsRunning, "IsRunning");
+            Assert.IsTrue(IsRunning, "IsRunning must be true!");
             
             m_Target.StopCoroutine(m_Coroutine);
 
-            for (var i = m_RunningCoroutineIndex; i < m_ActiveRunnerCount; i++)
+            for (var i = m_ActiveRunnerIndex; i < m_ActiveRunnerCount; i++)
                 m_RunnersPool[i].Interrupt();
 
             m_IsInterrupted = true;
             IsRunning = false;
         }
 
-        void StartWaitingForAll()
+        void OnActiveRunnerCompleted()
         {
-            IsRunning = true;
-            m_Coroutine = m_Target.StartCoroutine(WaitForAll());
+            CoroutineRunner activeRunner;
+            do
+            {
+                m_ActiveRunnerIndex++;
+                if (m_ActiveRunnerIndex >= m_ActiveRunnerCount)
+                {
+                    IsRunning = false;
+                    return;
+                }
+                activeRunner = m_RunnersPool[m_ActiveRunnerIndex];
+                
+            } while (!activeRunner.IsRunning);
+            
+            activeRunner.Then(OnActiveRunnerCompleted);
         }
         
-        void StartWaitingFor(IEnumerator coroutine)
+        void StartCoroutine(IEnumerator coroutine)
         {
             IsRunning = true;
-            m_Coroutine = m_Target.StartCoroutine(WaitFor(coroutine));
+            m_ThenAction = null;
+            m_Coroutine = m_Target.StartCoroutine(WaitForCompletion(coroutine));
         }
 
         void OnStopped()
         {
             m_ActiveRunnerCount = 0;
-            m_RunningCoroutineIndex = 0;
+            m_ActiveRunnerIndex = 0;
             if (!m_IsInterrupted)
                 OnCompleted();
             else
@@ -120,28 +140,9 @@ namespace EnvDev
             m_ThenAction?.Invoke();
         }
 
-        IEnumerator WaitFor(IEnumerator coroutine)
+        IEnumerator WaitForCompletion(IEnumerator coroutine)
         {
             yield return coroutine;
-            IsRunning = false;
-        }
-        
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        IEnumerator WaitForAll()
-        {
-            while (true)
-            {
-                if (m_RunnersPool[m_RunningCoroutineIndex].m_IsRunning)
-                {
-                    yield return null;
-                }
-                else
-                {
-                    m_RunningCoroutineIndex++;
-                    if (m_RunningCoroutineIndex >= m_ActiveRunnerCount)
-                        break;
-                }
-            }
             IsRunning = false;
         }
     }

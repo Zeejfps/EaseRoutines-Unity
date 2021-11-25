@@ -48,17 +48,15 @@ namespace EnvDev
 
         public static IEnumerator TweenRoutine(float duration, Action<float> lerpFunc, Func<double, double> easeFunc)
         {
-            var time = 0f;
+            var time = Time.deltaTime;
             while (time < duration)
             {
-                time += Time.deltaTime;
                 var progress = time / duration;
-                if (progress > 1f)
-                    progress = 1f;
-                var t = (float) easeFunc(progress);
-                lerpFunc?.Invoke(t);
+                lerpFunc.Invoke((float) easeFunc(progress));
                 yield return null;
+                time += Time.deltaTime;
             }
+            lerpFunc.Invoke((float) easeFunc(1f));
         }
     }
 }
