@@ -1,37 +1,56 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Net;
 using UnityEngine;
+using UnityEngine.Assertions;
 
 namespace EnvDev
 {
     public class CoroutineRunner
     {
-        public event Action Started;
-        public event Action Stopped;
-        public event Action Completed;
-        public event Action Interrupted;
-
         /// <summary>
         /// True if the runner has any coroutines that are running
         /// </summary>
-        public bool IsRunning { get; private set; }
+        bool m_IsRunning;
+        public bool IsRunning
+        {
+            get => m_IsRunning;
+            private set
+            {
+                m_IsRunning = value;
+                if (!m_IsRunning)
+                    OnStopped();
+            }
+        }
 
         readonly MonoBehaviour m_Target;
         readonly List<CoroutineRunner> m_RunnersPool = new List<CoroutineRunner>();
 
+        Action m_ThenAction;
         Coroutine m_Coroutine;
         int m_ActiveRunnerCount;
         int m_RunningCoroutineIndex;
+        bool m_IsInterrupted;
 
         public CoroutineRunner(MonoBehaviour target)
         {
             m_Target = target;
         }
 
-        public void Run(params IEnumerator[] coroutines)
+        /// <summary>
+        /// Sets an action that will be executed when all coroutines are complete
+        /// </summary>
+        /// <param name="action">Code to run when all coroutines are complete</param>
+        public void Then(Action action)
         {
+            m_ThenAction = action;
+        }
+
+        public CoroutineRunner Run(params IEnumerator[] coroutines)
+        {
+            m_IsInterrupted = false;
+            m_ThenAction = null;
+            
             var coroutineCount = coroutines.Length;
             var newActiveRunnerCount = m_ActiveRunnerCount + coroutineCount;
             
@@ -39,11 +58,13 @@ namespace EnvDev
                 m_RunnersPool.Add(new CoroutineRunner(m_Target));
 
             for (var i = 0; i < coroutineCount; i++)
-                m_RunnersPool[m_ActiveRunnerCount + i].RunSingle(coroutines[i]);
+                m_RunnersPool[m_ActiveRunnerCount + i].StartCoroutine(WaitFor(coroutines[i]));
 
             m_ActiveRunnerCount = newActiveRunnerCount;
 
-            if (!IsRunning) StartRunning();
+            if (!IsRunning) StartCoroutine(WaitForAll());
+
+            return this;
         }
 
         /// <summary>
@@ -51,70 +72,52 @@ namespace EnvDev
         /// </summary>
         public void Interrupt()
         {
-            if (!IsRunning)
-                return;
+            Assert.IsTrue(IsRunning, "IsRunning");
 
-            if (m_Coroutine != null)
-                m_Target.StopCoroutine(m_Coroutine);
+            m_Target.StopCoroutine(m_Coroutine);
 
             for (var i = m_RunningCoroutineIndex; i < m_ActiveRunnerCount; i++)
                 m_RunnersPool[i].Interrupt();
 
+            m_IsInterrupted = true;
             IsRunning = false;
-            OnInterrupted();
-            OnStopped();
         }
 
-        void StartRunning()
+        void StartCoroutine(IEnumerator coroutine)
         {
-            m_Coroutine = m_Target.StartCoroutine(WaitForAll());
+            IsRunning = true;
+            m_Coroutine = m_Target.StartCoroutine(coroutine);
         }
 
-        void RunSingle(IEnumerator coroutine)
-        {
-            m_Coroutine = m_Target.StartCoroutine(WaitFor(coroutine));
-        }
-
-        void OnStarted()
-        {
-            Started?.Invoke();
-        }
-
-        void OnInterrupted()
-        {
-            Interrupted?.Invoke();
-        }
-        
-        void OnCompleted()
-        {
-            Completed?.Invoke();
-        }
-        
         void OnStopped()
         {
             m_ActiveRunnerCount = 0;
             m_RunningCoroutineIndex = 0;
-            Stopped?.Invoke();
+            if (!m_IsInterrupted)
+                OnCompleted();
+            else
+                OnInterrupted();
+        }
+
+        void OnInterrupted()
+        {
+            // TODO: Add an event maybe?
+        }
+
+        void OnCompleted()
+        {
+            m_ThenAction?.Invoke();
         }
 
         IEnumerator WaitFor(IEnumerator coroutine)
         {
-            IsRunning = true;
-            OnStarted();
-            
             yield return coroutine;
-
             IsRunning = false;
-            OnCompleted();
-            OnStopped();
         }
         
         IEnumerator WaitForAll()
         {
-            IsRunning = true;
-            OnStarted();
-
-            while (true)
+            while (IsRunning)
             {
                 if (m_RunnersPool[m_RunningCoroutineIndex].IsRunning)
                 {
@@ -124,13 +127,9 @@ namespace EnvDev
                 {
                     m_RunningCoroutineIndex++;
                     if (m_RunningCoroutineIndex >= m_ActiveRunnerCount)
-                        break;
+                        IsRunning = false;
                 }
             }
-
-            IsRunning = false;
-            OnCompleted();
-            OnStopped();
         }
     }
 
