@@ -8,6 +8,8 @@ namespace EnvDev
 {
     public class CoroutineRunner
     {
+        public event Action Stopped;
+        
         /// <summary>
         /// True if the runner has any coroutines that are running
         /// </summary>
@@ -25,6 +27,8 @@ namespace EnvDev
                     OnStopped();
             }
         }
+
+        public bool WasInterrupted => m_IsInterrupted;
 
         readonly MonoBehaviour m_Target;
         readonly List<CoroutineRunner> m_RunnersPool = new List<CoroutineRunner>();
@@ -143,11 +147,15 @@ namespace EnvDev
         void OnInterrupted()
         {
             // TODO: Add an event maybe?
+            Stopped?.Invoke();
         }
 
         void OnCompleted()
         {
-            m_ThenAction?.Invoke();
+            if (m_ThenAction != null)
+                m_ThenAction.Invoke();
+            else
+                Stopped?.Invoke();
         }
 
         IEnumerator WaitForCompletion(IEnumerator coroutine)
