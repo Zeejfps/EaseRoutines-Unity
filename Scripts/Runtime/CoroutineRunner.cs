@@ -58,11 +58,15 @@ namespace EnvDev
                 m_RunnersPool.Add(new CoroutineRunner(m_Target));
 
             for (var i = 0; i < coroutineCount; i++)
-                m_RunnersPool[m_ActiveRunnerCount + i].StartCoroutine(WaitFor(coroutines[i]));
+            {
+                var runner = m_RunnersPool[m_ActiveRunnerCount + i];
+                runner.StartWaitingFor(coroutines[i]);
+            }
 
             m_ActiveRunnerCount = newActiveRunnerCount;
 
-            if (!IsRunning) StartCoroutine(WaitForAll());
+            if (!IsRunning)
+                StartWaitingForAll();
 
             return this;
         }
@@ -73,7 +77,7 @@ namespace EnvDev
         public void Interrupt()
         {
             Assert.IsTrue(IsRunning, "IsRunning");
-
+            
             m_Target.StopCoroutine(m_Coroutine);
 
             for (var i = m_RunningCoroutineIndex; i < m_ActiveRunnerCount; i++)
@@ -83,10 +87,16 @@ namespace EnvDev
             IsRunning = false;
         }
 
-        void StartCoroutine(IEnumerator coroutine)
+        void StartWaitingForAll()
         {
             IsRunning = true;
-            m_Coroutine = m_Target.StartCoroutine(coroutine);
+            m_Coroutine = m_Target.StartCoroutine(WaitForAll());
+        }
+        
+        void StartWaitingFor(IEnumerator coroutine)
+        {
+            IsRunning = true;
+            m_Coroutine = m_Target.StartCoroutine(WaitFor(coroutine));
         }
 
         void OnStopped()
@@ -132,5 +142,4 @@ namespace EnvDev
             }
         }
     }
-
 }
