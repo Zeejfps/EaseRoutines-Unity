@@ -12,6 +12,7 @@ namespace EnvDev
         const double N1 = 7.5635;
         const double D1 = 2.75;
         const double C1 = 1.70158;
+        const double C2 = C1 * 1.525;
         const double C3 = C1 + 1;
         const double C4 = (2.0 * Math.PI) / 3.0;
 
@@ -123,9 +124,23 @@ namespace EnvDev
         #region Back
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static double BackIn(double x)
+        {
+            return C3 * x * x * x - C1 * x * x;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static double BackOut(double x)
         {
             return 1 + C3 * Math.Pow(x - 1, 3) + C1 * Math.Pow(x - 1, 2);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static double BackInOut(double x)
+        {
+            return x < 0.5
+                ? (Math.Pow(2.0 * x, 2.0) * ((C2 + 1) * 2 * x - C2)) / 2
+                : (Math.Pow(2.0 * x - 2.0, 2.0) * ((C2 + 1) * (x * 2 - 2) + C2) + 2) / 2.0;
         }
 
         #endregion
