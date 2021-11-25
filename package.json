@@ -12,5 +12,6 @@
     "name": "Evgeny Vasilyev",
     "email": "zeejfps@gmail.com",
     "url": "https://www.evasilyev.com"
-  }
+  },
+  "type": "library"
 }
