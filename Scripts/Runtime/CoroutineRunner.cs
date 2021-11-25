@@ -17,6 +17,9 @@ namespace EnvDev
             get => m_IsRunning;
             private set
             {
+                if (m_IsRunning == value)
+                    return;
+                
                 m_IsRunning = value;
                 if (!m_IsRunning)
                     OnStopped();
@@ -84,8 +87,6 @@ namespace EnvDev
         /// </summary>
         public void Interrupt()
         {
-            Assert.IsTrue(IsRunning, "IsRunning must be true!");
-
             if (m_Coroutine != null)
             {
                 m_Target.StopCoroutine(m_Coroutine);
