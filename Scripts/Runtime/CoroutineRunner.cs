@@ -34,6 +34,16 @@ namespace EnvDev
         /// <returns></returns>
         public CoroutineRunner Run(params IEnumerator[] coroutines)
         {
+            if (!m_IsRunning)
+            {
+                m_IsRunning = true;
+                var activeRunner = m_RunnersPool[m_ActiveRunnerIndex];
+                if (activeRunner.IsRunning)
+                    activeRunner.Completed = UpdateActiveRunner;
+                else
+                    UpdateActiveRunner();
+            }
+            
             m_IsInterrupted = false;
             m_ThenAction = null;
             
@@ -50,16 +60,6 @@ namespace EnvDev
             }
 
             m_ActiveRunnerCount = newActiveRunnerCount;
-
-            if (!m_IsRunning)
-            {
-                m_IsRunning = true;
-                var activeRunner = m_RunnersPool[m_ActiveRunnerIndex];
-                if (activeRunner.IsRunning)
-                    activeRunner.Completed = UpdateActiveRunner;
-                else
-                    UpdateActiveRunner();
-            }
 
             return this;
         }
@@ -78,7 +78,6 @@ namespace EnvDev
         /// </summary>
         public void Interrupt()
         {
-            Debug.Log(m_ActiveRunnerIndex + ", " + m_ActiveRunnerCount);
             for (var i = m_ActiveRunnerIndex; i < m_ActiveRunnerCount; i++)
                 m_RunnersPool[i].StopCoroutine();
             OnInterrupted();

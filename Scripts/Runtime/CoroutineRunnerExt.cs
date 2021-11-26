@@ -18,6 +18,7 @@ namespace EnvDev
         public CoroutineRunnerAwaiter(CoroutineRunner runner)
         {
             m_Runner = runner;
+            IsCompleted = !m_Runner.IsRunning;
         }
         
         public bool IsCompleted { get; private set; }
