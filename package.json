@@ -1,6 +1,6 @@
 {
   "name": "com.envdev.easeroutines",
-  "version": "1.0.1",
+  "version": "1.0.0-preview",
   "displayName": "Ease Routines",
   "description": "Provides number of coroutines that can work as an easy way to Tween objects using provided ease functions.",
   "keywords": [
