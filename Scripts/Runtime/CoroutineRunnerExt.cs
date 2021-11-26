@@ -1,22 +1,28 @@
-﻿using System;
-using System.Runtime.CompilerServices;
+﻿using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 
 namespace EnvDev
 {
     public static class CoroutineRunnerExt
     {
-        public static CoroutineRunnerAwaiter GetAwaiter(this CoroutineRunner runner)
+        public static TaskAwaiter<bool> GetAwaiter(this CoroutineRunner runner)
         {
-            return new CoroutineRunnerAwaiter(runner);
+            return new CoroutineRunnerTaskCompletionSource(runner).Task.GetAwaiter();
         }
     }
     
-    public class CoroutineRunnerAwaiter : INotifyCompletion
+    class CoroutineRunnerTaskCompletionSource : TaskCompletionSource<bool>
     {
-        readonly CoroutineRunner m_Runner;
+        CoroutineRunner m_Runner;
         
-        public CoroutineRunnerAwaiter(CoroutineRunner runner)
+        public CoroutineRunnerTaskCompletionSource(CoroutineRunner runner)
         {
+            if (!runner.IsRunning)
+            {
+                TrySetResult(runner.IsInterrupted);
+                return;
+            }
+
             m_Runner = runner;
             m_Runner.Completed += Runner_OnCompleted;
         }
@@ -24,22 +30,9 @@ namespace EnvDev
         void Runner_OnCompleted()
         {
             m_Runner.Completed -= Runner_OnCompleted;
-            IsCompleted = true;
-        }
-
-        public bool IsCompleted { get; private set; }
-
-        public void GetResult()
-        {
-            m_Runner.Completed -= Runner_OnCompleted;
-            m_Runner.Interrupt();
-            IsCompleted = true;
-        }
-
-        public void OnCompleted(Action continuation)
-        {
-            IsCompleted = true;
-            continuation();
+            var result = m_Runner.IsInterrupted;
+            m_Runner = null;
+            TrySetResult(result);
         }
     }
 }
