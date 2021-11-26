@@ -1,17 +1,14 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
 using UnityEngine;
 
 namespace EnvDev
 {
     public class CoroutineRunner
     {
-        public event Action Stopped;
-
         /// <summary>
-        /// True if the runner has any coroutines that are running
+        /// True if the runner has any coroutines that are still running
         /// </summary>
         public bool IsRunning => m_IsRunning;
         public bool IsInterrupted => m_IsInterrupted;
@@ -81,11 +78,10 @@ namespace EnvDev
         /// </summary>
         public void Interrupt()
         {
+            Debug.Log(m_ActiveRunnerIndex + ", " + m_ActiveRunnerCount);
             for (var i = m_ActiveRunnerIndex; i < m_ActiveRunnerCount; i++)
                 m_RunnersPool[i].StopCoroutine();
-
-            m_IsInterrupted = true;
-            OnStopped();
+            OnInterrupted();
         }
 
         void UpdateActiveRunner()
@@ -97,7 +93,7 @@ namespace EnvDev
                 m_ActiveRunnerIndex++;
                 if (m_ActiveRunnerIndex >= m_ActiveRunnerCount)
                 {
-                    OnStopped();
+                    OnCompleted();
                     return;
                 }
                 activeRunner = m_RunnersPool[m_ActiveRunnerIndex];
@@ -107,30 +103,23 @@ namespace EnvDev
             activeRunner.Completed = UpdateActiveRunner;
         }
 
-        void OnStopped()
-        {
-            m_IsRunning = false;
-            m_ActiveRunnerCount = 0;
-            m_ActiveRunnerIndex = 0;
-            if (!m_IsInterrupted)
-                OnCompleted();
-            else
-                OnInterrupted();
-        }
-
         void OnInterrupted()
         {
-            // TODO: Add an event maybe?
-            Stopped?.Invoke();
+            m_IsInterrupted = true;
+            Reset();
         }
 
         void OnCompleted()
         {
-            if (m_ThenAction != null)
-                m_ThenAction.Invoke();
-            
-            if (!IsRunning)
-                Stopped?.Invoke();
+            Reset();
+            m_ThenAction?.Invoke();
+        }
+
+        void Reset()
+        {
+            m_IsRunning = false;
+            m_ActiveRunnerCount = 0;
+            m_ActiveRunnerIndex = 0;
         }
     }
 
@@ -150,24 +139,25 @@ namespace EnvDev
         public void StartCoroutine(IEnumerator coroutine)
         {
             IsRunning = true;
+            Completed = null;
             m_Coroutine = m_Target.StartCoroutine(WaitForCompletion(coroutine));
         }
 
         public void StopCoroutine()
         {
             m_Target.StopCoroutine(m_Coroutine);
-            OnCompleted();
+            IsRunning = false;
         }
         
         IEnumerator WaitForCompletion(IEnumerator coroutine)
         {
             yield return coroutine;
+            IsRunning = false;
             OnCompleted();
         }
 
         void OnCompleted()
         {
-            IsRunning = false;
             Completed?.Invoke();
         }
     }
