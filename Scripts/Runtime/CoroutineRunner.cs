@@ -9,24 +9,11 @@ namespace EnvDev
     public class CoroutineRunner
     {
         public event Action Stopped;
-        
+
         /// <summary>
         /// True if the runner has any coroutines that are running
         /// </summary>
-        public bool IsRunning
-        {
-            get => m_IsRunning;
-            private set
-            {
-                if (m_IsRunning == value)
-                    return;
-                
-                m_IsRunning = value;
-                if (!m_IsRunning)
-                    OnStopped();
-            }
-        }
-
+        public bool IsRunning => m_IsRunning;
         public bool IsInterrupted => m_IsInterrupted;
 
         readonly MonoBehaviour m_Target;
@@ -72,9 +59,9 @@ namespace EnvDev
                 m_IsRunning = true;
                 var activeRunner = m_RunnersPool[m_ActiveRunnerIndex];
                 if (activeRunner.IsRunning)
-                    activeRunner.Completed = CheckIfAllRunnersAreCompleted;
+                    activeRunner.Completed = UpdateActiveRunner;
                 else
-                    CheckIfAllRunnersAreCompleted();
+                    UpdateActiveRunner();
             }
 
             return this;
@@ -98,29 +85,31 @@ namespace EnvDev
                 m_RunnersPool[i].StopCoroutine();
 
             m_IsInterrupted = true;
-            IsRunning = false;
+            OnStopped();
         }
 
-        void CheckIfAllRunnersAreCompleted()
+        void UpdateActiveRunner()
         {
-            SingleCoroutineRunner activeRunner;
+            var activeRunner = m_RunnersPool[m_ActiveRunnerIndex];
+            activeRunner.Completed = null;
             do
             {
                 m_ActiveRunnerIndex++;
                 if (m_ActiveRunnerIndex >= m_ActiveRunnerCount)
                 {
-                    IsRunning = false;
+                    OnStopped();
                     return;
                 }
                 activeRunner = m_RunnersPool[m_ActiveRunnerIndex];
                 
             } while (!activeRunner.IsRunning);
             
-            activeRunner.Completed = CheckIfAllRunnersAreCompleted;
+            activeRunner.Completed = UpdateActiveRunner;
         }
 
         void OnStopped()
         {
+            m_IsRunning = false;
             m_ActiveRunnerCount = 0;
             m_ActiveRunnerIndex = 0;
             if (!m_IsInterrupted)
@@ -180,7 +169,6 @@ namespace EnvDev
         {
             IsRunning = false;
             Completed?.Invoke();
-            Completed = null;
         }
     }
 }
