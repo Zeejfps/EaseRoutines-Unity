@@ -18,12 +18,23 @@ namespace EnvDev
         public CoroutineRunnerAwaiter(CoroutineRunner runner)
         {
             m_Runner = runner;
-            IsCompleted = !m_Runner.IsRunning;
+            m_Runner.Completed += Runner_OnCompleted;
         }
-        
+
+        void Runner_OnCompleted()
+        {
+            m_Runner.Completed -= Runner_OnCompleted;
+            IsCompleted = true;
+        }
+
         public bool IsCompleted { get; private set; }
 
-        public bool GetResult() => !m_Runner.IsRunning;
+        public void GetResult()
+        {
+            m_Runner.Completed -= Runner_OnCompleted;
+            m_Runner.Interrupt();
+            IsCompleted = true;
+        }
 
         public void OnCompleted(Action continuation)
         {

@@ -7,6 +7,8 @@ namespace EnvDev
 {
     public class CoroutineRunner
     {
+        public event Action Completed;
+        
         /// <summary>
         /// True if the runner has any coroutines that are still running
         /// </summary>
@@ -112,6 +114,8 @@ namespace EnvDev
         {
             Reset();
             m_ThenAction?.Invoke();
+            if (!m_IsRunning)
+                Completed?.Invoke();
         }
 
         void Reset()
