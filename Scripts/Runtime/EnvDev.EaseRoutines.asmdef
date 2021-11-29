@@ -1,7 +1,9 @@
 {
     "name": "EnvDev.EaseRoutines",
     "rootNamespace": "",
-    "references": [],
+    "references": [
+        "GUID:bb884c10bd3a57c4c98ed05ea7aae46e"
+    ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,

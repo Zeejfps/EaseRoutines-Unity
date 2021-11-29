@@ -13,5 +13,8 @@
     "email": "zeejfps@gmail.com",
     "url": "https://www.evasilyev.com"
   },
-  "type": "library"
+  "type": "library",
+  "dependencies": {
+    "com.envdev.easefunctions": "1.0.0-preview"
+  }
 }
